@@ -1,6 +1,8 @@
 import pandas as pd
 from matplotlib import pyplot as plt
 from datetime import datetime, timedelta, date
+import psycopg2
+from pymongo import MongoClient
 pd.options.mode.chained_assignment = None
 
 class Solution(object):
@@ -50,7 +52,7 @@ class Solution(object):
         """
         Company wants to generate monthly report based on revenue of each
         hospital and number patients admitted across different district with
-        respect to different surgery category type for hospital financial analysis.
+        `respect to different surgery category type for hospital financial analysis.
         """
         adf.drop(adf[adf['DISCHARGE_DATE']==pd.to_datetime('2000-01-01')].index, inplace=True)
 
@@ -131,6 +133,69 @@ class Solution(object):
         df = df.groupby(['DISCHARGE_DATE','Patient_ID','HOSP_NAME','SURGERY','CLAIM_DATE']).agg({'CLAIM_AMOUNT':'sum','duration_in_days':'sum','PREAUTH_AMT':'sum'})
         df.to_csv('../data/question_five.csv')
 
+    def question_six(self):
+        """
+        Company needs to store patient surgery data in secure database like SQL
+        for audit trail purpose. Database auditor team want to validate the data
+        based on number of surgeries in each village district wise.
+        (Use Python, SQL to fulfill the requirement)
+        """
+        database, user, password, host, port = 'postgres','postgres','root','127.0.0.1',5432
+        conn = psycopg2.connect(database=database, user=user, password=password,host=host, port=port)
+        cursor = conn.cursor()
+        query = '''select "DISTRICT_NAME","VILLAGE",count("SURGERY") as no_of_surgery
+                    from surgery_data group by "DISTRICT_NAME","VILLAGE"'''
+        cursor.execute(query)
+        record = []
+        for i in cursor.fetchall():
+            h = {'district_name':i[0],'village':i[1],'no_of_surgery':i[2]}
+            record.append(h)
+        df = pd.DataFrame(record)
+        df.to_csv('../data/question_six.csv')
+
+    def get_array(self, sr):
+        if isinstance(sr, int):
+            return sr
+        else:
+            return sr.to_list()
+
+    def question_seven(self, df):
+        host = 'localhost'
+        port = 27017
+        dbname = 'test'
+        colname = 'coltest'
+        conn = MongoClient(host, port)
+        db = conn[dbname]
+        col = db[colname]
+        for i in df['Patient_ID']:
+            record_df = df[df['Patient_ID']==i]
+            # Mapper
+            record = dict()
+            record['Patient_ID'] = i
+            record['age'] = record_df['AGE'].to_list()[0]
+            record['sex'] = record_df['SEX'].to_list()[0]
+            record['category'] = record_df['CATEGORY_CODE'].to_list()
+            record['category_name'] =record_df['CATEGORY_NAME'].to_list()
+            record['surgery_code'] = record_df['SURGERY_CODE'].to_list()
+            record['surgery']=  record_df['SURGERY'].to_list()
+            record['village'] = record_df['VILLAGE'].to_list()[0]
+            record['district_name'] = record_df['DISTRICT_NAME'].to_list()[0]
+            record['perauth_date'] = record_df['PREAUTH_DATE'].to_list()[0]
+            record['perauth_amt'] = record_df['PREAUTH_AMT'].to_list()[0]
+            record['clain_date'] = record_df['CLAIM_DATE'].to_list()[0]
+            record['claim_amt'] = record_df['CLAIM_AMOUNT'].to_list()[0]
+            record['hosp_type'] = record_df['HOSP_TYPE'].to_list()[0]
+            record['hosp_name'] = record_df['HOSP_NAME'].to_list()[0]
+            record['hosp_location'] = record_df['HOSP_LOCATION'].to_list()[0]
+            record['hosp_district']  = record_df['HOSP_DISTRICT'].to_list()[0],
+            record['surgery_date'] = record_df['SURGERY_DATE'].to_list()[0]
+            record['discharge_date'] = record_df['DISCHARGE_DATE'].to_list()[0]
+            record['mortality_y_n'] = record_df['Mortality Y / N'].to_list()[0]
+            record['mortality_date'] = record_df['MORTALITY_DATE'].to_list()[0]
+            record['src_registration']= record_df['SRC_REGISTRATION'].to_list()[0]
+            print(record)
+            col.insert(record)
+
     def main(self):
         #self.get_clean()
         df = self.getDF()
@@ -138,8 +203,9 @@ class Solution(object):
         #self.question_two(df)
         #self.question_three(df)
         #self.question_four(df)
-        self.question_five(df)
-
+        #self.question_five(df)
+        #self.question_six()
+        self.question_seven(df)
 
 obj = Solution()
 obj.main()

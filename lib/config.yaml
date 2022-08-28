@@ -1,0 +1,14 @@
+mongo:
+  host: 127.0.0.1
+  port: 27017
+  dbname: testdb
+  colname: testcol
+  password: 
+  user:
+postgres:
+  host: 127.0.0.1
+  port: 5432
+  dbname: postgres
+  password: root
+public:
+  path: /Users/kamleshkumarrangi/workspace/assignment_medical/data
